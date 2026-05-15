@@ -116,7 +116,6 @@
     .flat-hint { font-size: 11px; color: var(--hint); }
 
     /* ── Main layout ── */
-*/
     .booking-layout {
       display: grid;
       grid-template-columns: minmax(0, 1fr) 300px;
@@ -171,55 +170,36 @@
       line-height: 1.2;
     }
     .slot {
-      min-height: 58px;
+      min-height: 42px;
       border-radius: 9px;
       border: 1px solid var(--border);
       background: var(--surface);
       cursor: pointer;
-      font-size: 10px;
-      display: grid;
-      grid-template-rows: auto 1fr;
-      align-items: stretch;
-      gap: 3px;
-      color: var(--muted);
-      transition: border-color 0.12s, background 0.12s, transform 0.1s;
-      user-select: none;
-      text-align: center;
-      padding: 4px 3px;
-    }
-    .slot-time { font-size: 11px; font-weight: 700; color: var(--text); line-height: 1; align-self:center; }
-    .machines { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
-    .machine-lane {
-      border: 1px solid var(--border);
-      border-radius: 7px;
-      background: rgba(255,255,255,0.72);
+      font-size: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 28px;
-      font-size: 10px;
-      font-weight: 700;
       color: var(--muted);
+      transition: border-color 0.12s, background 0.12s, transform 0.1s, box-shadow 0.12s;
+      user-select: none;
+      text-align: center;
+      padding: 4px;
+      font-weight: 700;
     }
-    .machine-lane.free { color: var(--teal-dk); background: var(--teal-lt); }
-    .machine-lane.mine { color: #fff; background: var(--teal); border-color: var(--teal); cursor: pointer; }
-    .machine-lane.mine:hover { background: var(--teal-dk); }
-    .machine-lane.taken { color: var(--hint); background: var(--taken-bg); }
-    .slot-state { font-size: 10px; color: var(--muted); line-height: 1.15; }
+    .slot-label { line-height: 1; }
     .slot:hover:not(.past):not(.taken):not(.closed):not(.loading) {
       border-color: var(--teal);
-      background: var(--teal-lt);
+      box-shadow: inset 0 0 0 1px rgba(29,158,117,0.18);
       transform: translateY(-1px);
     }
-    .slot:hover:not(.past):not(.taken):not(.closed):not(.loading) .slot-state { color: var(--teal-dk); }
     .slot.past { background: var(--bg); border-color: transparent; cursor: default; opacity: 0.45; }
     .slot.mine { background: var(--teal); border-color: var(--teal); color: #fff; }
-    .slot.mine .slot-time, .slot.mine .slot-state { color: #fff; }
     .slot.mine:hover { background: var(--teal-dk); border-color: var(--teal-dk); }
     .slot.taken { background: var(--taken-bg); border-color: var(--border); color: var(--hint); cursor: default; }
-    .slot.taken .slot-time { color: var(--muted); }
-    .slot.closed { background: var(--closed); border-color: transparent; cursor: default; opacity: 0.75; }
-    .slot.closed .slot-time, .slot.closed .slot-state { color: var(--hint); }
+    .slot.partial-mine { background: var(--teal); border-color: var(--teal); color: #fff; }
+    .slot.partial-taken { background: var(--taken-bg); border-color: var(--border); color: var(--muted); cursor: default; }
+    .slot.mixed { background: linear-gradient(135deg, var(--teal) 0 50%, var(--taken-bg) 50% 100%); border-color: var(--border); color: #fff; }
+    .slot.closed { background: var(--closed); border-color: transparent; cursor: default; opacity: 0.35; }
     .slot.loading { opacity: 0.5; cursor: wait; }
 
     /* ── Legend ── */
@@ -281,6 +261,9 @@
     .btn-del { background: var(--red)   !important; color: #fff !important; border-color: var(--red)   !important; }
     .btn-del:hover { background: #a83434 !important; }
 
+    .mbtns.stacked { flex-direction: column; }
+    .mbtns button:disabled { opacity: 0.35; cursor: default; transform: none; }
+
     /* ── Toast ── */
     #toast {
       position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
@@ -304,12 +287,10 @@
       .logo-sub { font-size: 12px; }
       .schedule-card, .panel-card { padding: 0.75rem; }
       .grid { grid-template-columns: 44px repeat(7, minmax(0, 1fr)); gap: 3px; }
-      .slot { min-height: 54px; padding: 3px 2px; }
+      .slot { min-height: 36px; padding: 3px 2px; font-size: 10px; }
       .gh { font-size: 10px; padding-inline: 1px; }
       .gh .day-num { font-size: 13px; }
       .hl { font-size: 9px; padding-right: 2px; }
-      .slot-time { font-size: 9px; }
-      .machine-lane { font-size: 9px; min-height: 24px; }
       .flat-hint { display: none; }
     }
   </style>
@@ -349,7 +330,7 @@
 
       <div class="legend">
         <div class="li"><div class="ld" style="border:1px solid #cac4bc;background:#fff"></div>Ledig</div>
-        <div class="li"><div class="ld" style="background:#1D9E75"></div>Din booking (klik for at aflyse)</div>
+        <div class="li"><div class="ld" style="background:#1D9E75"></div>Din booking</div>
         <div class="li"><div class="ld" style="background:#f0ede8;border:1px solid #e0dbd4"></div>Optaget</div>
       </div>
       <div class="refresh-note">↻ Opdateres automatisk hvert minut</div>
@@ -515,6 +496,18 @@
     return getMachineBookings(dateStr, h).some(x => x.booking);
   }
 
+  function userOwns(machineBooking) {
+    return Boolean(myFlat && machineBooking.booking && machineBooking.booking.flat === myFlat);
+  }
+
+  function slotSummary(dateStr, h) {
+    const items = getMachineBookings(dateStr, h);
+    const booked = items.filter(x => x.booking);
+    const mine = booked.filter(userOwns);
+    const other = booked.filter(x => !userOwns(x));
+    return { items, booked, mine, other };
+  }
+
   // ── Grid render ───────────────────────────────────────────────────────────
 
   function render() {
@@ -542,37 +535,44 @@
       html += `<div class="hl">${timeLabel(h)}</div>`;
       days.forEach(d => {
         const dateStr = fmtDate(d);
-        const machineBookings = getMachineBookings(dateStr, h);
+        const summary = slotSummary(dateStr, h);
         const isClosed = !isOpenAt(d, h);
         const isPastToday = dateStr === fmtDate(today) && h <= now.getHours();
-        const hasBooking = machineBookings.some(x => x.booking);
-        const mine = myFlat && machineBookings.some(x => x.booking && x.booking.flat === myFlat);
-        let cls = 'slot', onclick = '', title = '';
+        const bookedCount = summary.booked.length;
+        const mineCount = summary.mine.length;
+        const otherCount = summary.other.length;
+        let cls = 'slot', onclick = '', title = '', label = '';
 
         if (isClosed || isPastToday) {
           cls += ' closed';
-          title = '';
-        } else if (hasBooking) {
-          cls += mine ? ' mine' : ' taken';
-          title = mine ? 'Din booking – klik på M1 eller M2 for at aflyse én maskine' : 'Optaget';
-        } else {
+        } else if (bookedCount === 0) {
           onclick = `bookSlot('${dateStr}', ${h})`;
           title = `Book begge maskiner kl. ${padHour(h)}:00–${padHour(h + 1)}:00`;
+        } else if (bookedCount === 1) {
+          const one = summary.booked[0];
+          label = `M${one.machine + 1}`;
+          if (mineCount === 1) {
+            cls += ' partial-mine';
+            onclick = `delSlot('${dateStr}', ${h})`;
+            title = 'Din booking – klik for at aflyse M1, M2 eller begge';
+          } else {
+            cls += ' partial-taken';
+            title = 'Optaget';
+          }
+        } else if (mineCount === 2) {
+          cls += ' mine';
+          onclick = `delSlot('${dateStr}', ${h})`;
+          title = 'Din booking – klik for at aflyse M1, M2 eller begge';
+        } else if (mineCount > 0 && otherCount > 0) {
+          cls += ' mixed';
+          onclick = `delSlot('${dateStr}', ${h})`;
+          title = 'Din booking – klik for at aflyse M1, M2 eller begge';
+        } else {
+          cls += ' taken';
+          title = 'Optaget';
         }
 
-        const lanes = machineBookings.map(x => {
-          if (isClosed || isPastToday) return `<span class="machine-lane closed">M${x.machine + 1}</span>`;
-          if (!x.booking) return `<span class="machine-lane free">M${x.machine + 1}</span>`;
-          if (myFlat && x.booking.flat === myFlat) {
-            return `<button type="button" class="machine-lane mine" onclick="event.stopPropagation(); delMachineSlot('${x.key}', '${dateStr}', ${h}, ${x.machine})" title="Aflys kun maskine ${x.machine + 1}">M${x.machine + 1}</button>`;
-          }
-          return `<span class="machine-lane taken" title="Optaget">...</span>`;
-        }).join('');
-
-        html += `<div class="${cls}" ${onclick ? `onclick="${onclick}"` : ''} ${title ? `title="${title}" aria-label="${title}"` : ''}>
-          <span class="slot-time">${timeLabel(h)}</span>
-          <span class="machines">${lanes}</span>
-        </div>`;
+        html += `<div class="${cls}" ${onclick ? `onclick="${onclick}"` : ''} ${title ? `title="${title}" aria-label="${title}"` : ''}>${label ? `<span class="slot-label">${label}</span>` : ''}</div>`;
       });
     });
 
@@ -619,20 +619,37 @@
     } finally { busy = false; }
   }
 
-  function delMachineSlot(key, dateStr, h, machineNo) {
+  function delSlot(dateStr, h) {
     if (busy) return;
-    showDeleteMachineModal(key, dateStr, h, machineNo);
+    const summary = slotSummary(dateStr, h);
+    if (!summary.mine.length) return;
+    showDeleteModal(dateStr, h);
   }
 
-  async function confirmDeleteMachine(key) {
+  async function confirmDeleteChoice(dateStr, h, choice) {
     busy = true;
     closeModal();
+    const summary = slotSummary(dateStr, h);
+    let keys = [];
+    if (choice === 'both') {
+      keys = summary.mine.map(x => x.key);
+    } else {
+      const machine = Number(choice);
+      keys = summary.mine.filter(x => x.machine === machine).map(x => x.key);
+    }
+
+    if (!keys.length) {
+      busy = false;
+      toast('Der er ikke noget at aflyse der');
+      return;
+    }
+
     try {
-      await removeBooking(key, myFlat);
-      delete bookings[key];
+      await Promise.all(keys.map(key => removeBooking(key, myFlat)));
+      keys.forEach(key => { delete bookings[key]; });
       render();
       showEmptyPanel();
-      toast('Maskine aflyst');
+      toast(keys.length === 2 ? 'Begge maskiner aflyst' : 'Maskine aflyst');
     } catch (e) {
       toast(e.message);
       await refresh();
@@ -646,7 +663,7 @@
     document.getElementById('modal-area').innerHTML = `
       <div class="panel-empty">
         <strong>Vælg en tid</strong>
-        Klik på en ledig tid for at booke begge maskiner. Klik på M1 eller M2 i din booking for at aflyse én maskine.
+        Klik på en hvid tid for at booke begge maskiner. Klik på din grønne booking for at aflyse M1, M2 eller begge.
       </div>`;
   }
 
@@ -665,16 +682,21 @@
     focus('fi', () => keyEnter('fi', confirmBook));
   }
 
-  function showDeleteMachineModal(key, dateStr, h, machineNo) {
+  function showDeleteModal(dateStr, h) {
     const d    = parseLocalDate(dateStr);
     const dayN = d.toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'long' });
+    const summary = slotSummary(dateStr, h);
+    const ownsM1 = summary.mine.some(x => x.machine === 0);
+    const ownsM2 = summary.mine.some(x => x.machine === 1);
     setModal(`
-      <h3>Aflyse maskine ${machineNo + 1}?</h3>
-      <div class="selection"><strong>${dayN}</strong><br>kl. ${padHour(h)}:00 – ${padHour(h + 1)}:00<br>Kun maskine ${machineNo + 1} frigives.</div>
-      <p>Den anden maskine forbliver booket, hvis den også var din.</p>
-      <div class="mbtns">
+      <h3>Aflyse booking?</h3>
+      <div class="selection"><strong>${dayN}</strong><br>kl. ${padHour(h)}:00 – ${padHour(h + 1)}:00</div>
+      <p>Vælg om du vil frigive én maskine eller begge.</p>
+      <div class="mbtns stacked">
+        <button class="btn-del" ${ownsM1 ? '' : 'disabled'} onclick="confirmDeleteChoice('${dateStr}', ${h}, '0')">Aflys M1</button>
+        <button class="btn-del" ${ownsM2 ? '' : 'disabled'} onclick="confirmDeleteChoice('${dateStr}', ${h}, '1')">Aflys M2</button>
+        <button class="btn-del" onclick="confirmDeleteChoice('${dateStr}', ${h}, 'both')">Aflys begge</button>
         <button onclick="closeModal()">Behold</button>
-        <button class="btn-del" onclick="confirmDeleteMachine('${key}')">Aflys M${machineNo + 1}</button>
       </div>`);
   }
 
