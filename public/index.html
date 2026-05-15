@@ -526,7 +526,7 @@
 
   function bookingOwnerLabel(machineBooking) {
     if (!machineBooking.booking) return 'ledig';
-    return userOwns(machineBooking) ? : `${machineBooking.booking.flat}`;
+    return userOwns(machineBooking) : `${machineBooking.booking.flat}`;
   }
 
   function slotTitle(summary, h) {
