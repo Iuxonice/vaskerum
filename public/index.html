@@ -194,12 +194,12 @@
       transform: translateY(-1px);
     }
     .slot.past { background: var(--bg); border-color: transparent; cursor: default; opacity: 0.45; }
-    .slot.mine { background: var(--teal); border-color: var(--teal); color: #fff; }
-    .slot.mine:hover { background: var(--teal-dk); border-color: var(--teal-dk); }
+    .slot.mine { background: var(--teal); border-color: var(--teal); color: var(--text); }
+    .slot.mine:hover { background: var(--teal-dk); border-color: var(--teal-dk); color: var(--text); }
     .slot.taken { background: var(--taken-bg); border-color: var(--border); color: var(--hint); cursor: default; }
-    .slot.partial-mine { background: var(--teal); border-color: var(--teal); color: #fff; }
+    .slot.partial-mine { background: var(--teal); border-color: var(--teal); color: var(--text); }
     .slot.partial-taken { background: var(--surface); border-color: var(--border2); color: var(--muted); }
-    .slot.mixed { background: linear-gradient(135deg, var(--teal) 0 50%, var(--taken-bg) 50% 100%); border-color: var(--border); color: #fff; }
+    .slot.mixed { background: linear-gradient(135deg, var(--teal) 0 50%, var(--taken-bg) 50% 100%); border-color: var(--border); color: var(--text); }
     .slot.info { cursor: pointer; }
     .slot-detail {
       display: flex;
@@ -267,7 +267,7 @@
       transition: background 0.1s, transform 0.1s;
     }
     .mbtns button:hover { background: var(--bg); transform: translateY(-1px); }
-    .btn-ok  { background: var(--teal)  !important; color: #fff !important; border-color: var(--teal)  !important; }
+    .btn-ok  { background: var(--teal)  !important; color: var(--text) !important; border-color: var(--teal)  !important; }
     .btn-ok:hover  { background: var(--teal-dk) !important; }
     .btn-del { background: var(--red)   !important; color: #fff !important; border-color: var(--red)   !important; }
     .btn-del:hover { background: #a83434 !important; }
@@ -537,15 +537,32 @@
   }
 
   function splitLabel(summary) {
-    // Only show details when the clean color alone is not enough to explain the slot.
+    // Keep the calendar quiet. Show only what is needed to understand the booking.
+    if (!summary.booked.length) return '';
+
+    if (summary.booked.length === 2) {
+      const [a, b] = summary.booked;
+      const sameFlat = a.booking.flat === b.booking.flat;
+
+      // Same apartment booked both machines: show it once.
+      // If it is your own booking, keep the green cell empty.
+      if (sameFlat) return userOwns(a) ? '' : `<span>${escapeHtml(a.booking.flat)}</span>`;
+    }
+
     return summary.booked
-      .map(x => `<span>${machineName(x.machine)} ${escapeHtml(bookingOwnerLabel(x))}</span>`)
+      .map(x => {
+        const owner = bookingOwnerLabel(x);
+        return `<span>${machineName(x.machine)}${owner ? ` ${escapeHtml(owner)}` : ''}</span>`;
+      })
       .join('');
   }
 
   function bookingDetailsHtml(summary) {
     return summary.items
-      .map(x => `${machineName(x.machine)}: ${escapeHtml(bookingOwnerLabel(x))}`)
+      .map(x => {
+        const owner = bookingOwnerLabel(x);
+        return `${machineName(x.machine)}: ${owner ? escapeHtml(owner) : 'dig'}`;
+      })
       .join('<br>');
   }
 
