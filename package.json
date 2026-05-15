@@ -1,0 +1,12 @@
+{
+  "name": "vaskerum",
+  "version": "1.0.0",
+  "description": "Washing machine booking system",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

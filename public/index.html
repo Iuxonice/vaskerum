@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vaskerum</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #f7f5f2;
+      --surface:  #ffffff;
+      --border:   #e0dbd4;
+      --border2:  #cac4bc;
+      --text:     #1a1916;
+      --muted:    #7a746c;
+      --hint:     #b0aa9e;
+      --teal:     #1D9E75;
+      --teal-dk:  #0F6E56;
+      --teal-lt:  #e1f5ee;
+      --red:      #c94040;
+      --red-lt:   #fceaea;
+      --taken-bg: #f0ede8;
+      --radius:   8px;
+      --radius-lg:12px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 1.5rem 1rem 4rem;
+    }
+
+    .page { max-width: 720px; margin: 0 auto; }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .logo { font-size: 20px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+    .logo svg { opacity: 0.7; }
+    .logo-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Week nav ── */
+    .week-nav { display: flex; align-items: center; gap: 6px; }
+    .week-nav button {
+      width: 30px; height: 30px;
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 15px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text);
+      transition: background 0.1s;
+    }
+    .week-nav button:hover:not(:disabled) { background: var(--bg); }
+    .week-nav button:disabled { opacity: 0.3; cursor: default; }
+    #week-lbl { font-size: 13px; color: var(--muted); min-width: 140px; text-align: center; }
+
+    /* ── Flat bar ── */
+    .flat-bar {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 1rem;
+      font-size: 13px; color: var(--muted);
+    }
+    .flat-pill {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      padding: 3px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--text);
+      transition: border-color 0.15s;
+    }
+    .flat-pill:hover { border-color: var(--teal); }
+    .flat-hint { font-size: 11px; color: var(--hint); }
+
+    /* ── Machine tabs ── */
+    .tabs { display: flex; gap: 6px; margin-bottom: 0.75rem; }
+    .tab {
+      padding: 6px 16px;
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--muted);
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .tab.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+
+    /* ── Grid ── */
+    .grid-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .grid {
+      display: grid;
+      grid-template-columns: 38px repeat(7, 1fr);
+      gap: 2px;
+      min-width: 460px;
+    }
+    .gh {
+      font-size: 11px; color: var(--muted);
+      text-align: center;
+      padding: 4px 2px 6px;
+      line-height: 1.4;
+    }
+    .gh.today { color: var(--teal); font-weight: 500; }
+    .gh .day-num { font-size: 14px; font-weight: 500; display: block; }
+    .hl {
+      font-size: 10px; color: var(--hint);
+      display: flex; align-items: center; justify-content: flex-end;
+      padding-right: 4px;
+    }
+    .slot {
+      height: 30px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--hint);
+      transition: border-color 0.12s, background 0.12s;
+      user-select: none;
+    }
+    .slot:hover:not(.past):not(.taken):not(.loading) {
+      border-color: var(--teal);
+      background: var(--teal-lt);
+      color: var(--teal-dk);
+    }
+    .slot.past { background: var(--bg); border-color: transparent; cursor: default; opacity: 0.45; }
+    .slot.mine { background: var(--teal); border-color: var(--teal); color: #fff; }
+    .slot.mine:hover { background: var(--teal-dk); border-color: var(--teal-dk); }
+    .slot.taken { background: var(--taken-bg); border-color: var(--border); color: var(--hint); cursor: default; }
+    .slot.loading { opacity: 0.5; cursor: wait; }
+
+    /* ── Legend ── */
+    .legend {
+      display: flex; gap: 1.25rem; flex-wrap: wrap;
+      margin-top: 0.75rem;
+      font-size: 11px; color: var(--muted);
+    }
+    .li { display: flex; align-items: center; gap: 5px; }
+    .ld { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+    .refresh-note { font-size: 11px; color: var(--hint); margin-top: 6px; }
+
+    /* ── Modal overlay (in normal flow, no fixed) ── */
+    .ov {
+      background: rgba(20, 18, 14, 0.45);
+      display: flex; align-items: center; justify-content: center;
+      border-radius: var(--radius-lg);
+      padding: 2rem 1rem;
+      margin-bottom: 1rem;
+    }
+    .modal {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      width: 320px;
+      max-width: 100%;
+    }
+    .modal h3 { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+    .modal p { font-size: 13px; color: var(--muted); margin-bottom: 1rem; line-height: 1.5; }
+    .modal input[type=text] {
+      width: 100%; padding: 8px 10px;
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      font-size: 14px; font-family: inherit;
+      margin-bottom: 8px;
+      outline: none;
+      background: var(--surface);
+      color: var(--text);
+    }
+    .modal input[type=text]:focus { border-color: var(--teal); }
+    .modal input[type=text].err { border-color: var(--red); }
+    .chk-row {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 12px; color: var(--muted);
+      margin-bottom: 1rem;
+      cursor: pointer;
+    }
+    .chk-row input { cursor: pointer; accent-color: var(--teal); }
+    .mbtns { display: flex; gap: 8px; }
+    .mbtns button {
+      flex: 1; padding: 9px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border2);
+      cursor: pointer;
+      font-size: 14px; font-family: inherit;
+      background: var(--surface);
+      color: var(--text);
+      transition: background 0.1s;
+    }
+    .mbtns button:hover { background: var(--bg); }
+    .btn-ok  { background: var(--teal)  !important; color: #fff !important; border-color: var(--teal)  !important; }
+    .btn-ok:hover  { background: var(--teal-dk) !important; }
+    .btn-del { background: var(--red)   !important; color: #fff !important; border-color: var(--red)   !important; }
+    .btn-del:hover { background: #a83434 !important; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+      background: #1a1916; color: #fff;
+      padding: 8px 18px; border-radius: 20px; font-size: 13px;
+      opacity: 0; transition: opacity 0.25s;
+      pointer-events: none; white-space: nowrap;
+    }
+    #toast.show { opacity: 1; }
+
+    @media (max-width: 500px) {
+      body { padding: 1rem 0.75rem 3rem; }
+      .logo { font-size: 17px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <div id="modal-area"></div>
+
+  <header>
+    <div>
+      <div class="logo">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="18" rx="2"/>
+          <circle cx="12" cy="13" r="4"/>
+          <path d="M6 7h.01M9 7h.01"/>
+        </svg>
+        Vaskerum
+      </div>
+      <div class="logo-sub">Book en af de to maskiner — én time ad gangen</div>
+    </div>
+    <div class="week-nav">
+      <button id="prev-btn" title="Forrige uge">&#8249;</button>
+      <span id="week-lbl"></span>
+      <button id="next-btn" title="Næste uge">&#8250;</button>
+    </div>
+  </header>
+
+  <div class="flat-bar">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>Lejlighed:</span>
+    <button class="flat-pill" id="flat-pill" title="Klik for at ændre">ikke sat</button>
+    <span class="flat-hint">(gemmes i din browser)</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="setMachine(0)">Maskine 1</button>
+    <button class="tab"       onclick="setMachine(1)">Maskine 2</button>
+  </div>
+
+  <div class="grid-wrap">
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <div class="legend">
+    <div class="li"><div class="ld" style="border:1px solid #cac4bc;background:#fff"></div>Ledig</div>
+    <div class="li"><div class="ld" style="background:#1D9E75"></div>Din booking (klik for at aflyse)</div>
+    <div class="li"><div class="ld" style="background:#f0ede8;border:1px solid #e0dbd4"></div>Optaget</div>
+  </div>
+  <div class="refresh-note">↻ Opdateres automatisk hvert minut</div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const HOURS = Array.from({ length: 16 }, (_, i) => i + 7); // 07–22
+  const DAY_SHORT = ['Man','Tir','Ons','Tor','Fre','Lør','Søn'];
+
+  let weekStart  = getMon(new Date());
+  let machine    = 0;
+  let bookings   = {};
+  let myFlat     = localStorage.getItem('vaskerum_flat') || '';
+  let pending    = null;
+  let busy       = false; // prevent double-clicks
+
+  // ── Date helpers ──────────────────────────────────────────────────────────
+
+  function getMon(d) {
+    const dt = new Date(d);
+    const day = dt.getDay();
+    dt.setDate(dt.getDate() - (day === 0 ? 6 : day - 1));
+    dt.setHours(0, 0, 0, 0);
+    return dt;
+  }
+  function addDays(d, n) { const dt = new Date(d); dt.setDate(dt.getDate() + n); return dt; }
+  function fmtDate(d)    { return d.toISOString().slice(0, 10); }
+  function slotKey(d, m, h) { return `${fmtDate(d)}-m${m}-h${h}`; }
+  function weekLabel(s) {
+    const e = addDays(s, 6);
+    const o = { day: 'numeric', month: 'short' };
+    return `${s.toLocaleDateString('da-DK', o)} – ${e.toLocaleDateString('da-DK', o)}`;
+  }
+
+  // ── API ───────────────────────────────────────────────────────────────────
+
+  async function fetchBookings() {
+    const res = await fetch('/api/bookings');
+    if (!res.ok) throw new Error('Kunne ikke hente bookings');
+    return res.json();
+  }
+
+  async function addBooking(key, flat) {
+    const res = await fetch('/api/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key, flat }),
+    });
+    if (res.status === 409) throw new Error('Tidspunktet er allerede optaget');
+    if (!res.ok) throw new Error('Booking mislykkedes');
+    return res.json();
+  }
+
+  async function removeBooking(key, flat) {
+    const res = await fetch(`/api/bookings/${encodeURIComponent(key)}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ flat }),
+    });
+    if (!res.ok) throw new Error('Sletning mislykkedes');
+    return res.json();
+  }
+
+  // ── Init & polling ────────────────────────────────────────────────────────
+
+  async function init() {
+    updateFlatPill();
+    await refresh();
+    setInterval(refresh, 60_000);
+  }
+
+  async function refresh() {
+    try { bookings = await fetchBookings(); render(); }
+    catch (e) { console.error(e); }
+  }
+
+  // ── UI helpers ────────────────────────────────────────────────────────────
+
+  function updateFlatPill() {
+    document.getElementById('flat-pill').textContent = myFlat || 'ikke sat';
+  }
+
+  function setMachine(m) {
+    machine = m;
+    document.querySelectorAll('.tab').forEach((b, i) => {
+      b.className = 'tab' + (i === m ? ' active' : '');
+    });
+    render();
+  }
+
+  function toast(msg, dur = 2500) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('show'), dur);
+  }
+
+  // ── Grid render ───────────────────────────────────────────────────────────
+
+  function render() {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const now   = new Date();
+    const minW  = getMon(new Date());
+    const maxW  = getMon(addDays(new Date(), 21));
+    const days  = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
+    document.getElementById('week-lbl').textContent = weekLabel(weekStart);
+    document.getElementById('prev-btn').disabled = weekStart <= minW;
+    document.getElementById('next-btn').disabled = weekStart >= maxW;
+
+    let html = '<div></div>';
+
+    // Day headers
+    days.forEach((d, i) => {
+      const isToday = fmtDate(d) === fmtDate(today);
+      html += `<div class="gh${isToday ? ' today' : ''}">
+        ${DAY_SHORT[i]}<span class="day-num">${d.getDate()}</span>
+      </div>`;
+    });
+
+    // Hour rows
+    HOURS.forEach(h => {
+      html += `<div class="hl">${h}</div>`;
+      days.forEach(d => {
+        const key = slotKey(d, machine, h);
+        const bk  = bookings[key];
+        const isPast = d < today || (fmtDate(d) === fmtDate(today) && h <= now.getHours());
+        let cls = 'slot', lbl = '', onclick = '', title = '';
+
+        if (bk) {
+          if (myFlat && bk.flat === myFlat) {
+            cls += ' mine'; lbl = '✓';
+            onclick = `delSlot('${key}')`;
+            title = 'Din booking – klik for at aflyse';
+          } else {
+            cls += ' taken'; lbl = bk.flat;
+            title = `Optaget af lej. ${bk.flat}`;
+          }
+        } else if (isPast) {
+          cls += ' past'; title = 'Fortid';
+        } else {
+          onclick = `bookSlot('${fmtDate(d)}', ${h})`;
+          title = `Book kl. ${h}:00–${h+1}:00`;
+        }
+
+        html += `<div class="${cls}" onclick="${onclick}" title="${title}">${lbl}</div>`;
+      });
+    });
+
+    document.getElementById('grid').innerHTML = html;
+  }
+
+  // ── Booking actions ───────────────────────────────────────────────────────
+
+  function bookSlot(dateStr, h) {
+    if (busy) return;
+    if (myFlat) {
+      doBook(dateStr, h, myFlat);
+    } else {
+      pending = { dateStr, h };
+      showBookModal(dateStr, h);
+    }
+  }
+
+  async function doBook(dateStr, h, flat) {
+    busy = true;
+    const key = slotKey(new Date(dateStr + 'T00:00:00'), machine, h);
+    try {
+      await addBooking(key, flat);
+      bookings[key] = { flat, at: new Date().toISOString() };
+      render();
+      toast('Booking bekræftet ✓');
+    } catch (e) {
+      toast(e.message);
+      await refresh(); // re-sync in case of conflict
+    } finally { busy = false; }
+  }
+
+  function delSlot(key) {
+    if (busy) return;
+    showDeleteModal(key);
+  }
+
+  async function confirmDelete(key) {
+    busy = true;
+    closeModal();
+    try {
+      await removeBooking(key, myFlat);
+      delete bookings[key];
+      render();
+      toast('Booking aflyst');
+    } catch (e) { toast(e.message); }
+    finally { busy = false; }
+  }
+
+  // ── Modals ────────────────────────────────────────────────────────────────
+
+  function showBookModal(dateStr, h) {
+    const d    = new Date(dateStr + 'T00:00:00');
+    const dayN = d.toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'long' });
+    setModal(`
+      <h3>Book Maskine ${machine + 1}</h3>
+      <p>${dayN}<br>kl. ${h}:00 – ${h + 1}:00</p>
+      <input type="text" id="fi" placeholder="Lejlighedsnr. (f.eks. 3A)" autocomplete="off">
+      <label class="chk-row"><input type="checkbox" id="sv" checked> Husk mit lejlighedsnummer</label>
+      <div class="mbtns">
+        <button onclick="closeModal()">Annuller</button>
+        <button class="btn-ok" onclick="confirmBook()">Book</button>
+      </div>`);
+    focus('fi', () => keyEnter('fi', confirmBook));
+  }
+
+  function showDeleteModal(key) {
+    setModal(`
+      <h3>Aflyse booking?</h3>
+      <p>Er du sikker på, at du vil aflyse denne booking?</p>
+      <div class="mbtns">
+        <button onclick="closeModal()">Behold</button>
+        <button class="btn-del" onclick="confirmDelete('${key}')">Aflyse</button>
+      </div>`);
+  }
+
+  function showFlatEdit() {
+    setModal(`
+      <h3>Lejlighedsnummer</h3>
+      <p>Gemmes i din browser – du skal kun taste det én gang.</p>
+      <input type="text" id="fi" placeholder="f.eks. 3A" value="${myFlat}" autocomplete="off">
+      <div class="mbtns">
+        <button onclick="closeModal()">Annuller</button>
+        <button class="btn-ok" onclick="saveFlat()">Gem</button>
+      </div>`);
+    focus('fi', () => { document.getElementById('fi').select(); keyEnter('fi', saveFlat); });
+  }
+
+  function setModal(inner) {
+    document.getElementById('modal-area').innerHTML =
+      `<div class="ov"><div class="modal">${inner}</div></div>`;
+  }
+
+  function closeModal() {
+    document.getElementById('modal-area').innerHTML = '';
+    pending = null;
+  }
+
+  function focus(id, cb) {
+    setTimeout(() => { const el = document.getElementById(id); if (el) { el.focus(); cb && cb(); } }, 40);
+  }
+
+  function keyEnter(id, fn) {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') fn(); });
+  }
+
+  async function confirmBook() {
+    const fi  = document.getElementById('fi');
+    const val = fi ? fi.value.trim() : '';
+    if (!val) { if (fi) fi.classList.add('err'); return; }
+    const save = document.getElementById('sv');
+    if (save && save.checked) {
+      myFlat = val;
+      localStorage.setItem('vaskerum_flat', val);
+      updateFlatPill();
+    }
+    closeModal();
+    if (pending) { await doBook(pending.dateStr, pending.h, val); pending = null; }
+  }
+
+  function saveFlat() {
+    const fi  = document.getElementById('fi');
+    const val = fi ? fi.value.trim() : '';
+    if (!val) { if (fi) fi.classList.add('err'); return; }
+    myFlat = val;
+    localStorage.setItem('vaskerum_flat', val);
+    updateFlatPill();
+    closeModal();
+    render();
+    toast('Lejlighedsnummer gemt');
+  }
+
+  // ── Nav ───────────────────────────────────────────────────────────────────
+
+  document.getElementById('prev-btn').onclick = () => { weekStart = addDays(weekStart, -7); render(); };
+  document.getElementById('next-btn').onclick = () => { weekStart = addDays(weekStart,  7); render(); };
+  document.getElementById('flat-pill').onclick = showFlatEdit;
+
+  // ── Go ────────────────────────────────────────────────────────────────────
+
+  init();
+</script>
+</body>
+</html>
