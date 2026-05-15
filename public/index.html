@@ -33,14 +33,34 @@
     body {
       font-family: 'DM Sans', sans-serif;
       background:
-        radial-gradient(circle at top left, rgba(29,158,117,0.10), transparent 34rem),
+        radial-gradient(circle at 12% 6%, rgba(29,158,117,0.12), transparent 28rem),
+        radial-gradient(circle at 92% 18%, rgba(15,110,86,0.08), transparent 22rem),
         var(--bg);
       color: var(--text);
       min-height: 100vh;
       padding: 1.5rem 1rem 4rem;
+      position: relative;
+      overflow-x: hidden;
     }
 
-    .page { max-width: 1060px; margin: 0 auto; }
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      pointer-events: none;
+      z-index: -1;
+      border-radius: 999px;
+      border: 1px solid rgba(29,158,117,0.14);
+      opacity: 0.9;
+      animation: bubbleFloat 9s ease-in-out infinite;
+    }
+    body::before { width: 80px; height: 80px; left: 4vw; top: 18vh; }
+    body::after { width: 42px; height: 42px; right: 8vw; top: 58vh; animation-delay: -3s; }
+    @keyframes bubbleFloat {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-18px) scale(1.05); }
+    }
+
+    .page { max-width: 1280px; margin: 0 auto; }
 
     /* ── Header ── */
     header {
@@ -53,6 +73,8 @@
     }
     .logo { font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 9px; }
     .logo svg { opacity: 0.72; }
+    .logo:hover svg { animation: washSpin 0.9s ease-in-out; }
+    @keyframes washSpin { 0% { transform: rotate(0); } 55% { transform: rotate(14deg); } 100% { transform: rotate(0); } }
     .logo-sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
 
     /* ── Week nav ── */
@@ -93,25 +115,11 @@
     .flat-pill:hover { border-color: var(--teal); transform: translateY(-1px); }
     .flat-hint { font-size: 11px; color: var(--hint); }
 
-    .info-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 0.85rem 1rem;
-      margin-bottom: 1rem;
-      box-shadow: var(--shadow);
-      font-size: 13px;
-      color: var(--muted);
-      display: flex;
-      gap: 0.6rem;
-      align-items: flex-start;
-    }
-    .info-card strong { color: var(--text); font-weight: 700; }
-
     /* ── Main layout ── */
+*/
     .booking-layout {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 320px;
+      grid-template-columns: minmax(0, 1fr) 300px;
       gap: 1rem;
       align-items: start;
     }
@@ -137,12 +145,12 @@
     .panel-empty strong { display: block; color: var(--text); font-size: 15px; margin-bottom: 0.3rem; }
 
     /* ── Grid ── */
-    .grid-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+    .grid-wrap { overflow-x: visible; padding-bottom: 2px; }
     .grid {
       display: grid;
-      grid-template-columns: 64px repeat(7, minmax(88px, 1fr));
+      grid-template-columns: 58px repeat(7, minmax(0, 1fr));
       gap: 4px;
-      min-width: 760px;
+      width: 100%;
     }
     .gh {
       font-size: 12px; color: var(--muted);
@@ -163,24 +171,40 @@
       line-height: 1.2;
     }
     .slot {
-      min-height: 42px;
+      min-height: 58px;
       border-radius: 9px;
       border: 1px solid var(--border);
       background: var(--surface);
       cursor: pointer;
       font-size: 10px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 2px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      align-items: stretch;
+      gap: 3px;
       color: var(--muted);
       transition: border-color 0.12s, background 0.12s, transform 0.1s;
       user-select: none;
       text-align: center;
       padding: 4px 3px;
     }
-    .slot-time { font-size: 11px; font-weight: 700; color: var(--text); line-height: 1; }
+    .slot-time { font-size: 11px; font-weight: 700; color: var(--text); line-height: 1; align-self:center; }
+    .machines { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+    .machine-lane {
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: rgba(255,255,255,0.72);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 28px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .machine-lane.free { color: var(--teal-dk); background: var(--teal-lt); }
+    .machine-lane.mine { color: #fff; background: var(--teal); border-color: var(--teal); cursor: pointer; }
+    .machine-lane.mine:hover { background: var(--teal-dk); }
+    .machine-lane.taken { color: var(--hint); background: var(--taken-bg); }
     .slot-state { font-size: 10px; color: var(--muted); line-height: 1.15; }
     .slot:hover:not(.past):not(.taken):not(.closed):not(.loading) {
       border-color: var(--teal);
@@ -279,8 +303,13 @@
       .logo { font-size: 18px; }
       .logo-sub { font-size: 12px; }
       .schedule-card, .panel-card { padding: 0.75rem; }
-      .grid { grid-template-columns: 58px repeat(7, minmax(82px, 1fr)); min-width: 690px; }
-      .slot { min-height: 44px; }
+      .grid { grid-template-columns: 44px repeat(7, minmax(0, 1fr)); gap: 3px; }
+      .slot { min-height: 54px; padding: 3px 2px; }
+      .gh { font-size: 10px; padding-inline: 1px; }
+      .gh .day-num { font-size: 13px; }
+      .hl { font-size: 9px; padding-right: 2px; }
+      .slot-time { font-size: 9px; }
+      .machine-lane { font-size: 9px; min-height: 24px; }
       .flat-hint { display: none; }
     }
   </style>
@@ -297,7 +326,6 @@
         </svg>
         Vaskerum
       </div>
-      <div class="logo-sub">Book én vasketid — begge maskiner reserveres sammen.</div>
     </div>
     <div class="week-nav">
       <button id="prev-btn" title="Forrige uge">&#8249;</button>
@@ -313,11 +341,6 @@
     <span class="flat-hint">(gemmes i din browser)</span>
   </div>
 
-  <div class="info-card">
-    <span aria-hidden="true">ℹ️</span>
-    <div><strong>Begge maskiner bookes samlet.</strong> Tiderne er 08–20 mandag-lørdag og 10–20 søndag.</div>
-  </div>
-
   <div class="booking-layout">
     <section class="schedule-card" aria-label="Bookingkalender">
       <div class="grid-wrap">
@@ -328,7 +351,6 @@
         <div class="li"><div class="ld" style="border:1px solid #cac4bc;background:#fff"></div>Ledig</div>
         <div class="li"><div class="ld" style="background:#1D9E75"></div>Din booking (klik for at aflyse)</div>
         <div class="li"><div class="ld" style="background:#f0ede8;border:1px solid #e0dbd4"></div>Optaget</div>
-        <div class="li"><div class="ld" style="background:#ece8e1"></div>Lukket</div>
       </div>
       <div class="refresh-note">↻ Opdateres automatisk hvert minut</div>
     </section>
@@ -340,17 +362,23 @@
 <div id="toast"></div>
 
 <script>
-  const HOURS = Array.from({ length: 13 }, (_, i) => i + 8); // 08–20
+  const HOURS = Array.from({ length: 12 }, (_, i) => i + 8); // slots 08–09 through 19–20
   const DAY_SHORT = ['Man','Tir','Ons','Tor','Fre','Lør','Søn'];
   const MACHINE_IDS = [0, 1];
 
-  let weekStart  = getMon(new Date());
+  let viewStart  = startOfDay(new Date());
   let bookings   = {};
   let myFlat     = localStorage.getItem('vaskerum_flat') || '';
   let pending    = null;
   let busy       = false; // prevent double-clicks
 
   // ── Date helpers ──────────────────────────────────────────────────────────
+
+  function startOfDay(d) {
+    const dt = new Date(d);
+    dt.setHours(0, 0, 0, 0);
+    return dt;
+  }
 
   function getMon(d) {
     const dt = new Date(d);
@@ -403,10 +431,14 @@
     return h >= (isSunday(d) ? 10 : 8) && h < 20;
   }
 
-  function weekLabel(s) {
+  function periodLabel(s) {
     const e = addDays(s, 6);
     const o = { day: 'numeric', month: 'short' };
     return `${s.toLocaleDateString('da-DK', o)} – ${e.toLocaleDateString('da-DK', o)}`;
+  }
+
+  function dayShort(d) {
+    return DAY_SHORT[(d.getDay() + 6) % 7];
   }
 
   function escapeHtml(value) {
@@ -472,73 +504,74 @@
     el._t = setTimeout(() => el.classList.remove('show'), dur);
   }
 
-  function getCombinedBooking(dateStr, h) {
-    const keys = slotKeys(dateStr, h);
-    const found = keys.map(key => ({ key, booking: bookings[key] })).filter(x => x.booking);
-    return { keys, found, first: found[0] || null };
+  function getMachineBookings(dateStr, h) {
+    return MACHINE_IDS.map(m => {
+      const key = slotKey(dateStr, m, h);
+      return { machine: m, key, booking: bookings[key] || null };
+    });
+  }
+
+  function slotHasAnyBooking(dateStr, h) {
+    return getMachineBookings(dateStr, h).some(x => x.booking);
   }
 
   // ── Grid render ───────────────────────────────────────────────────────────
 
   function render() {
-    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const today = startOfDay(new Date());
     const now   = new Date();
-    const minW  = getMon(new Date());
-    const maxW  = getMon(addDays(new Date(), 21));
-    const days  = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+    const maxStart = addDays(today, 21);
+    const days  = Array.from({ length: 7 }, (_, i) => addDays(viewStart, i));
 
-    document.getElementById('week-lbl').textContent = weekLabel(weekStart);
-    document.getElementById('prev-btn').disabled = weekStart <= minW;
-    document.getElementById('next-btn').disabled = weekStart >= maxW;
+    document.getElementById('week-lbl').textContent = periodLabel(viewStart);
+    document.getElementById('prev-btn').disabled = viewStart <= today;
+    document.getElementById('next-btn').disabled = viewStart >= maxStart;
 
     let html = '<div></div>';
 
-    // Day headers
-    days.forEach((d, i) => {
+    // Day headers — always today or later, never past days.
+    days.forEach(d => {
       const isToday = fmtDate(d) === fmtDate(today);
       html += `<div class="gh${isToday ? ' today' : ''}">
-        ${DAY_SHORT[i]}<span class="day-num">${d.getDate()}</span>
+        ${dayShort(d)}<span class="day-num">${d.getDate()}</span>
       </div>`;
     });
 
-    // Hour rows
+    // Hour rows. Last visible slot is 19–20, so 20–21 is not shown.
     HOURS.forEach(h => {
       html += `<div class="hl">${timeLabel(h)}</div>`;
       days.forEach(d => {
         const dateStr = fmtDate(d);
-        const combined = getCombinedBooking(dateStr, h);
-        const bk = combined.first ? combined.first.booking : null;
+        const machineBookings = getMachineBookings(dateStr, h);
         const isClosed = !isOpenAt(d, h);
-        const isPast = d < today || (dateStr === fmtDate(today) && h <= now.getHours());
-        let cls = 'slot', state = 'Ledig', onclick = '', title = '';
+        const isPastToday = dateStr === fmtDate(today) && h <= now.getHours();
+        const hasBooking = machineBookings.some(x => x.booking);
+        const mine = myFlat && machineBookings.some(x => x.booking && x.booking.flat === myFlat);
+        let cls = 'slot', onclick = '', title = '';
 
-        if (isClosed) {
+        if (isClosed || isPastToday) {
           cls += ' closed';
-          state = 'Lukket';
-          title = 'Lukket på dette tidspunkt';
-        } else if (bk) {
-          if (myFlat && combined.found.some(x => x.booking.flat === myFlat)) {
-            cls += ' mine';
-            state = 'Din booking';
-            onclick = `delSlot('${dateStr}', ${h})`;
-            title = 'Din booking – klik for at aflyse';
-          } else {
-            cls += ' taken';
-            state = `Lej. ${escapeHtml(bk.flat)}`;
-            title = `Optaget af lej. ${escapeHtml(bk.flat)}`;
-          }
-        } else if (isPast) {
-          cls += ' past';
-          state = 'Fortid';
-          title = 'Fortid';
+          title = '';
+        } else if (hasBooking) {
+          cls += mine ? ' mine' : ' taken';
+          title = mine ? 'Din booking – klik på M1 eller M2 for at aflyse én maskine' : 'Optaget';
         } else {
           onclick = `bookSlot('${dateStr}', ${h})`;
           title = `Book begge maskiner kl. ${padHour(h)}:00–${padHour(h + 1)}:00`;
         }
 
-        html += `<div class="${cls}" onclick="${onclick}" title="${title}" aria-label="${title}">
+        const lanes = machineBookings.map(x => {
+          if (isClosed || isPastToday) return `<span class="machine-lane closed">M${x.machine + 1}</span>`;
+          if (!x.booking) return `<span class="machine-lane free">M${x.machine + 1}</span>`;
+          if (myFlat && x.booking.flat === myFlat) {
+            return `<button type="button" class="machine-lane mine" onclick="event.stopPropagation(); delMachineSlot('${x.key}', '${dateStr}', ${h}, ${x.machine})" title="Aflys kun maskine ${x.machine + 1}">M${x.machine + 1}</button>`;
+          }
+          return `<span class="machine-lane taken" title="Optaget">...</span>`;
+        }).join('');
+
+        html += `<div class="${cls}" ${onclick ? `onclick="${onclick}"` : ''} ${title ? `title="${title}" aria-label="${title}"` : ''}>
           <span class="slot-time">${timeLabel(h)}</span>
-          <span class="slot-state">${state}</span>
+          <span class="machines">${lanes}</span>
         </div>`;
       });
     });
@@ -552,8 +585,7 @@
     if (busy) return;
     const d = parseLocalDate(dateStr);
     if (!isOpenAt(d, h)) return;
-    const combined = getCombinedBooking(dateStr, h);
-    if (combined.found.length) {
+    if (slotHasAnyBooking(dateStr, h)) {
       toast('Tidspunktet er allerede optaget');
       refresh();
       return;
@@ -587,21 +619,20 @@
     } finally { busy = false; }
   }
 
-  function delSlot(dateStr, h) {
+  function delMachineSlot(key, dateStr, h, machineNo) {
     if (busy) return;
-    showDeleteModal(dateStr, h);
+    showDeleteMachineModal(key, dateStr, h, machineNo);
   }
 
-  async function confirmDelete(dateStr, h) {
+  async function confirmDeleteMachine(key) {
     busy = true;
     closeModal();
-    const keys = slotKeys(dateStr, h).filter(key => bookings[key] && bookings[key].flat === myFlat);
     try {
-      await Promise.all(keys.map(key => removeBooking(key, myFlat)));
-      keys.forEach(key => delete bookings[key]);
+      await removeBooking(key, myFlat);
+      delete bookings[key];
       render();
       showEmptyPanel();
-      toast('Booking aflyst');
+      toast('Maskine aflyst');
     } catch (e) {
       toast(e.message);
       await refresh();
@@ -615,7 +646,7 @@
     document.getElementById('modal-area').innerHTML = `
       <div class="panel-empty">
         <strong>Vælg en tid</strong>
-        Klik på en ledig tid i kalenderen. Bekræftelse, lejlighedsnummer og aflysning vises her.
+        Klik på en ledig tid for at booke begge maskiner. Klik på M1 eller M2 i din booking for at aflyse én maskine.
       </div>`;
   }
 
@@ -634,16 +665,16 @@
     focus('fi', () => keyEnter('fi', confirmBook));
   }
 
-  function showDeleteModal(dateStr, h) {
+  function showDeleteMachineModal(key, dateStr, h, machineNo) {
     const d    = parseLocalDate(dateStr);
     const dayN = d.toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'long' });
     setModal(`
-      <h3>Aflyse booking?</h3>
-      <div class="selection"><strong>${dayN}</strong><br>kl. ${padHour(h)}:00 – ${padHour(h + 1)}:00<br>Begge maskiner frigives.</div>
-      <p>Er du sikker på, at du vil aflyse denne booking?</p>
+      <h3>Aflyse maskine ${machineNo + 1}?</h3>
+      <div class="selection"><strong>${dayN}</strong><br>kl. ${padHour(h)}:00 – ${padHour(h + 1)}:00<br>Kun maskine ${machineNo + 1} frigives.</div>
+      <p>Den anden maskine forbliver booket, hvis den også var din.</p>
       <div class="mbtns">
         <button onclick="closeModal()">Behold</button>
-        <button class="btn-del" onclick="confirmDelete('${dateStr}', ${h})">Aflys</button>
+        <button class="btn-del" onclick="confirmDeleteMachine('${key}')">Aflys M${machineNo + 1}</button>
       </div>`);
   }
 
@@ -706,8 +737,8 @@
 
   // ── Nav ───────────────────────────────────────────────────────────────────
 
-  document.getElementById('prev-btn').onclick = () => { weekStart = addDays(weekStart, -7); render(); };
-  document.getElementById('next-btn').onclick = () => { weekStart = addDays(weekStart,  7); render(); };
+  document.getElementById('prev-btn').onclick = () => { viewStart = addDays(viewStart, -7); if (viewStart < startOfDay(new Date())) viewStart = startOfDay(new Date()); render(); };
+  document.getElementById('next-btn').onclick = () => { viewStart = addDays(viewStart,  7); render(); };
   document.getElementById('flat-pill').onclick = showFlatEdit;
 
   // ── Go ────────────────────────────────────────────────────────────────────
