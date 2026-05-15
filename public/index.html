@@ -197,7 +197,7 @@
     .slot.mine:hover { background: var(--teal-dk); border-color: var(--teal-dk); }
     .slot.taken { background: var(--taken-bg); border-color: var(--border); color: var(--hint); cursor: default; }
     .slot.partial-mine { background: var(--teal); border-color: var(--teal); color: #fff; }
-    .slot.partial-taken { background: var(--taken-bg); border-color: var(--border); color: var(--muted); cursor: default; }
+    .slot.partial-taken { background: var(--surface); border-color: var(--border2); color: var(--muted); }
     .slot.mixed { background: linear-gradient(135deg, var(--teal) 0 50%, var(--taken-bg) 50% 100%); border-color: var(--border); color: #fff; }
     .slot.closed { background: var(--closed); border-color: transparent; cursor: default; opacity: 0.35; }
     .slot.loading { opacity: 0.5; cursor: wait; }
@@ -546,6 +546,7 @@
         if (isClosed || isPastToday) {
           cls += ' closed';
         } else if (bookedCount === 0) {
+          label = padHour(h);
           onclick = `bookSlot('${dateStr}', ${h})`;
           title = `Book begge maskiner kl. ${padHour(h)}:00–${padHour(h + 1)}:00`;
         } else if (bookedCount === 1) {
@@ -557,7 +558,8 @@
             title = 'Din booking – klik for at aflyse M1, M2 eller begge';
           } else {
             cls += ' partial-taken';
-            title = 'Optaget';
+            onclick = `bookSlot('${dateStr}', ${h})`;
+            title = `Book den ledige maskine kl. ${padHour(h)}:00–${padHour(h + 1)}:00`;
           }
         } else if (mineCount === 2) {
           cls += ' mine';
@@ -581,15 +583,24 @@
 
   // ── Booking actions ───────────────────────────────────────────────────────
 
+  function freeMachineKeys(dateStr, h) {
+    return getMachineBookings(dateStr, h)
+      .filter(x => !x.booking)
+      .map(x => x.key);
+  }
+
   function bookSlot(dateStr, h) {
     if (busy) return;
     const d = parseLocalDate(dateStr);
     if (!isOpenAt(d, h)) return;
-    if (slotHasAnyBooking(dateStr, h)) {
+
+    const keys = freeMachineKeys(dateStr, h);
+    if (!keys.length) {
       toast('Tidspunktet er allerede optaget');
       refresh();
       return;
     }
+
     if (myFlat) {
       doBook(dateStr, h, myFlat);
     } else {
@@ -600,19 +611,27 @@
 
   async function doBook(dateStr, h, flat) {
     busy = true;
-    const keys = slotKeys(dateStr, h);
+    const keys = freeMachineKeys(dateStr, h);
+
+    if (!keys.length) {
+      busy = false;
+      toast('Tidspunktet er allerede optaget');
+      await refresh();
+      return;
+    }
+
     const created = [];
     try {
       for (const key of keys) {
         await addBooking(key, flat);
         created.push(key);
       }
-      keys.forEach(key => { bookings[key] = { flat, at: new Date().toISOString() }; });
+      created.forEach(key => { bookings[key] = { flat, at: new Date().toISOString() }; });
       render();
       showEmptyPanel();
-      toast('Booking bekræftet ✓');
+      toast(created.length === 2 ? 'Begge maskiner booket ✓' : 'Ledig maskine booket ✓');
     } catch (e) {
-      // Avoid half-bookings if the second machine fails because of a race/conflict.
+      // Roll back only what this click created, in case another user grabbed the other machine first.
       await Promise.allSettled(created.map(key => removeBooking(key, flat)));
       toast(e.message);
       await refresh();
@@ -672,7 +691,7 @@
     const dayN = d.toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'long' });
     setModal(`
       <h3>Book vasketid</h3>
-      <div class="selection"><strong>${dayN}</strong><br>kl. ${padHour(h)}:00 – ${padHour(h + 1)}:00<br>Begge maskiner reserveres.</div>
+      <div class="selection"><strong>${dayN}</strong><br>kl. ${padHour(h)}:00 – ${padHour(h + 1)}:00<br>${freeMachineKeys(dateStr, h).length === 2 ? 'Begge maskiner reserveres.' : 'Den ledige maskine reserveres.'}</div>
       <input type="text" id="fi" placeholder="Lejlighedsnr. (f.eks. 3A)" autocomplete="off">
       <label class="chk-row"><input type="checkbox" id="sv" checked> Husk mit lejlighedsnummer</label>
       <div class="mbtns">
